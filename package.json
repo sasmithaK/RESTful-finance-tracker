@@ -1,0 +1,22 @@
+{
+  "name": "personal-finance-tracker-api",
+  "version": "1.0.0",
+  "description": "Building a Secure RESTful API for a Personal Finance Tracker System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server",
+    "server": "nodemon server"
+  },
+  "author": "Gunasena R.K.R.M.S.K - IT22125798",
+  "license": "MIT",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.12.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
