@@ -13,6 +13,7 @@ const app = express();
 const transactions = require('./routes/transactions');
 const authentication = require('./routes/authentication');
 const budget = require('./routes/budget');
+const dashboard = require('./routes/dashboard');
 
 // Connect to MongoDB
 connectDB();
@@ -25,6 +26,7 @@ app.use(morgan('server'));
 app.use('/api/transactions', transactions);
 app.use('/api/auth', authentication);
 app.use('/api/budgets', budget);
+app.use('/api/dashboard', dashboard);
 
 const PORT = process.env.PORT || 3000;
 
