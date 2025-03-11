@@ -1,5 +1,5 @@
-Student ID: IT22125798
-Name: Gunasena R.K.R.M.S.K
+- Student ID: IT22125798
+- Name: Gunasena R.K.R.M.S.K
 
 # Personal Finance Tracker API
 
@@ -16,7 +16,7 @@ Ensure you have the following installed:
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/project-sasmithaK.git
+   git clone [https://github.com/your-repo/project-sasmithaK.git](https://github.com/SE1020-IT2070-OOP-DSA-25/project-sasmithaK.git)
    cd project-sasmithaK
    ```
 2. Install dependencies:
