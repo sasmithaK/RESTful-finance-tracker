@@ -16,8 +16,8 @@ Ensure you have the following installed:
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/finance-tracker-api.git
-   cd finance-tracker-api
+   git clone https://github.com/your-repo/project-sasmithaK.git
+   cd project-sasmithaK
    ```
 2. Install dependencies:
    ```sh
