@@ -12,6 +12,7 @@ const app = express();
 // Import routes
 const transactions = require('./routes/transactions');
 const authentication = require('./routes/authentication');
+const budget = require('./routes/budget');
 
 // Connect to MongoDB
 connectDB();
@@ -22,6 +23,7 @@ app.use(express.json());
 // Routes
 app.use('/api/transactions', transactions);
 app.use('/api/auth', authentication);
+app.use('/api/budgets', budget);
 
 const PORT = process.env.PORT || 3000;
 
