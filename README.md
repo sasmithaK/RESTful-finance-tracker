@@ -1,3 +1,6 @@
+Student ID: IT22125798
+Name: Gunasena R.K.R.M.S.K
+
 # Personal Finance Tracker API
 
 ## Overview
