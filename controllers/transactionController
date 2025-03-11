@@ -1,4 +1,6 @@
 const Transaction = require('../models/Transaction');
+const transactionService = require('../services/transaction.service');
+const responseHandler = require('../utils/responseHeader');
 
 // @desc Get all transactions
 // @route GET /api/transactions
@@ -18,14 +20,14 @@ exports.getTransactions = async (req, res, next) => {
             error: 'Server Error'
         });
     }
-}
+};
 
 // @desc Add transactions
 // @route POST /api/transactions
 // @access Public
 exports.addTransactions = async (req, res, next) => {
     res.send('POST transactions');
-}
+};
 
 // @desc Update transaction
 // @route PUT /api/transactions/:id
@@ -43,11 +45,46 @@ exports.updateTransaction = async (req, res, next) => {
     } catch (error) {
         return res.status(500).json({ success: false, error: 'Server Error' });
     }
-}
+};
 
 // @desc Delete transactions
 // @route DELETE /api/transactions/:id
 // @access Public
 exports.deleteTransactions = async (req, res, next) => {
     res.send('DELETE transactions');
-}
+};
+
+// @desc Generate financial report
+// @route GET /api/transactions/report
+// @access Private
+exports.generateFinancialReport = async (req, res, next) => {
+    try {
+        const report = await transactionService.generateFinancialReport(req.query);
+        responseHandler.success(res, 'Financial report generated successfully', report);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc Generate chart data
+// @route GET /api/transactions/chart
+// @access Private
+exports.generateChartData = async (req, res, next) => {
+    try {
+        const report = await transactionService.generateFinancialReport(req.query);
+
+        const chartData = {
+            labels: ['Income', 'Expenses'],
+            datasets: [
+                {
+                    label: 'Amount',
+                    data: [report.totalIncome, report.totalExpenses],
+                },
+            ],
+        };
+
+        responseHandler.success(res, 'Chart data generated successfully', chartData);
+    } catch (error) {
+        next(error);
+    }
+};
