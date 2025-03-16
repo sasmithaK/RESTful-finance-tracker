@@ -24,7 +24,7 @@ app.use(express.json());
 app.use('/api/transactions', transactions);
 app.use('/api/auth', authentication);
 app.use('/api/budgets', budget);
-
+      
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
