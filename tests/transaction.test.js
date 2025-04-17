@@ -11,8 +11,8 @@ describe('Transaction API', () => {
     // Log in and get a token
     beforeAll(async () => {
         const res = await request(app).post('/api/auth/login').send({
-            username: 'testuser10',
-            password: 'roottestuser'
+            username: 'strawberryuser',
+            password: 'strawberryuser'
         });
         token = res.body.token;
     });
@@ -20,7 +20,7 @@ describe('Transaction API', () => {
     const testCases = [
         {
             description: 'should create a new transaction',
-            endpoint: '/api/transactions',
+            endpoint: '/api/transactions/create',
             method: 'post',
             payload: testTransaction,
             expectedStatus: 201,
@@ -28,26 +28,26 @@ describe('Transaction API', () => {
         },
         {
             description: 'should get all transactions',
-            endpoint: '/api/transactions',
+            endpoint: '/api/transactions/create',
             method: 'get',
             expectedStatus: 200,
         },
         {
             description: 'should update an existing transaction',
-            endpoint: () => `/api/transactions/${transactionId}`,
+            endpoint: () => `/api/transactions/update/${transactionId}`,
             method: 'put',
             payload: updatedTransaction,
             expectedStatus: 200,
         },
         {
             description: 'should delete an existing transaction',
-            endpoint: () => `/api/transactions/${transactionId}`,
+            endpoint: () => `/api/transactions/delete/${transactionId}`,
             method: 'delete',
             expectedStatus: 200,
         },
         {
             description: 'should return 404 for non-existing transaction',
-            endpoint: '/api/transactions/invalidtransactionid',
+            endpoint: '/api/transactions/update/invalidtransactionid',
             method: 'put',
             payload: updatedTransaction,
             expectedStatus: 404,

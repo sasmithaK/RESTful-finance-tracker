@@ -10,10 +10,11 @@ dotenv.config({ path: '.env' });
 const app = express();
 
 // Import routes
-const transactions = require('./routes/transactions');
-const authentication = require('./routes/authentication');
-const budget = require('./routes/budget');
-const dashboard = require('./routes/dashboard');
+const transactions = require('./routes/transaction.routes');
+const authentication = require('./routes/authentication.routes');
+const budget = require('./routes/budget.routes');
+const goal = require('./routes/goal.routes');
+const dashboard = require('./routes/dashboard.routes');
 
 // Connect to MongoDB
 connectDB();
@@ -26,6 +27,7 @@ app.use(morgan('server'));
 app.use('/api/transactions', transactions);
 app.use('/api/auth', authentication);
 app.use('/api/budgets', budget);
+app.use('/api/goals', goal);
 app.use('/api/dashboard', dashboard);
 
 const PORT = process.env.PORT || 3000;

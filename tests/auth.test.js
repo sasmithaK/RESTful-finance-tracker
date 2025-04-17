@@ -1,78 +1,132 @@
 const request = require('supertest');
 const app = require('../server');
+const mongoose = require('mongoose');
+const User = require('../models/User'); // Adjust path if needed
 
-// Test cases for the authentication endpoints
 describe('Auth Endpoints', () => {
-    let testUsers = [
-        { username: 'testuser10', password: 'roottestuser', role: 'user' },
-        { username: 'testadmin01', password: 'adminpass500', role: 'admin' },
+    const registrationUsers = [
+        { 
+            username: 'userApple', 
+            email: 'apple@test.com',
+            password: 'apple3000', 
+            role: 'user',
+            fullName: 'Apple User'
+        },
+        { 
+            username: 'adminMango', 
+            email: 'mango@test.com',
+            password: 'mango100', 
+            role: 'admin',
+            fullName: 'Mango Admin'
+        },
     ];
 
-    // Ensure test users exist before login tests
+    const loginUsers = [
+        { 
+            username: 'testuser10', 
+            email: 'testuser10@test.com',
+            password: 'roottestuser', 
+            role: 'user',
+            fullName: 'Test User 10'
+        },
+        { 
+            username: 'testadmin01', 
+            email: 'testadmin01@test.com',
+            password: 'adminpass500', 
+            role: 'admin',
+            fullName: 'Test Admin 01'
+        },
+    ];
+
     beforeAll(async () => {
-        for (const user of testUsers) {
+        await User.deleteMany({});
+        
+        for (const user of loginUsers) {
             await request(app).post('/api/auth/register').send(user);
         }
     });
 
+    afterAll(async () => {
+        await User.deleteMany({});
+        await mongoose.connection.close();
+    });
 
-    const testCases = [
-        {
-            description: 'should register a new user',
-            endpoint: '/api/auth/register',
-            method: 'post',
-            payload: testUsers[0],
-            expectedStatus: 201,
-        },
-        {
-            description: 'should register a new admin',
-            endpoint: '/api/auth/register',
-            method: 'post',
-            payload: testUsers[1],
-            expectedStatus: 201,
-        },
-        {
-            description: 'should login an existing user',
-            endpoint: '/api/auth/login',
-            method: 'post',
-            payload: { username: 'testuser10', password: 'roottestuser' },
-            expectedStatus: 200,
-        },
-        {
-            description: 'should login an existing admin',
-            endpoint: '/api/auth/login',
-            method: 'post',
-            payload: { username: 'testadmin01', password: 'adminpass500' },
-            expectedStatus: 200,
-        },
-        {
-            description: 'should fail login with wrong password',
-            endpoint: '/api/auth/login',
-            method: 'post',
-            payload: { username: 'testuser10', password: 'wrongpassword' },
-            expectedStatus: 401,
-        },
-        {
-            description: 'should fail login for non-existent user',
-            endpoint: '/api/auth/login',
-            method: 'post',
-            payload: { username: 'itsme', password: 'password123' },
-            expectedStatus: 404,
-        }
-    ];
+    it('should register a new user and return success message', async () => {
+        const res = await request(app).post('/api/auth/register').send(registrationUsers[0]);
 
-    testCases.forEach(({ description, endpoint, method, payload, expectedStatus }) => {
-        it(description, async () => {
-            const res = await request(app)[method](endpoint).send(payload);
-            expect(res.statusCode).toBe(expectedStatus);
-            
-            if (expectedStatus === 200 || expectedStatus === 201) {
-                expect(res.body).toHaveProperty('token');
-                expect(res.body).toHaveProperty('user');
-            } else {
-                // Get error response for failed cases
-                expect(res.body).toHaveProperty('error'); 
-            }
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toHaveProperty('message', 'User registered successfully.');
+        expect(res.body).toHaveProperty('success', true);
+    });
+
+    it('should register a new admin and return success message', async () => {
+        const res = await request(app).post('/api/auth/register').send(registrationUsers[1]);
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toHaveProperty('message', 'User registered successfully.');
+        expect(res.body).toHaveProperty('success', true);
+    });
+
+    it('should login an existing user and return token', async () => {
+        const res = await request(app).post('/api/auth/login').send({
+            username: loginUsers[0].username, 
+            password: loginUsers[0].password 
         });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty('token');
+        expect(res.body).toHaveProperty('user');
+        expect(res.body.user.username).toBe(loginUsers[0].username);
+    });
+
+    it('should login an existing admin and return token', async () => {
+        const res = await request(app).post('/api/auth/login').send({
+            username: loginUsers[1].username, 
+            password: loginUsers[1].password 
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty('token');
+        expect(res.body).toHaveProperty('user');
+        expect(res.body.user.username).toBe(loginUsers[1].username);
+    });
+
+    it('should fail login with wrong password', async () => {
+        const res = await request(app).post('/api/auth/login').send({
+            username: loginUsers[0].username, 
+            password: 'wrongpassword' 
+        });
+
+        expect(res.statusCode).toBe(401);
+        expect(res.body).toHaveProperty('message', 'Invalid credentials.');
+    });
+
+    it('should fail login for non-existent user', async () => {
+        const res = await request(app).post('/api/auth/login').send({
+            username: 'nonexistentuser', 
+            password: 'password123' 
+        });
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body).toHaveProperty('message', 'User not found.');
+    });
+
+    it('should fail registration with duplicate username', async () => {
+        const res = await request(app).post('/api/auth/register').send({
+            username: loginUsers[0].username,
+            email: 'different@test.com',
+            password: 'newpassword',
+            fullName: 'Duplicate Test'
+        });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('message', 'User already exists');
+    });
+
+    it('should fail registration with missing required fields', async () => {
+        const res = await request(app).post('/api/auth/register').send({ username: 'incomplete' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('message', 'All fields are required');
     });
 });
