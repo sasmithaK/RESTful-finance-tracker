@@ -1,75 +1,134 @@
 const request = require('supertest');
-const app = require('../server');
+const { connectDB, closeDB } = require('../config/db'); // Ensure this file exports both functions
+const app = require('../server'); // Import app instead of running the server
+const Budget = require('../models/Budget');
+const User = require('../models/User');
 
-describe('Budget API', () => {
-    let token;
-    let budgetId;
+describe('Budget API Tests', () => {
+    let testUser;
+    let authToken;
+    let testBudget;
 
-    const testBudget = { name: 'Test Budget', amount: 1500 };
-    const updatedBudget = { name: 'Updated Budget', amount: 2000 };
-
-    // Log in and get a token
     beforeAll(async () => {
-        const res = await request(app).post('/api/auth/login').send({
-            username: 'testuser10',
-            password: 'roottestuser'
-        });
-        token = res.body.token;
+        // Connect to the test database
+        await connectDB();
+
+        // Clean up any existing test data
+        await Budget.deleteMany({});
+        await User.deleteMany({});
+
+        // Create a test user
+        const userResponse = await request(app)
+            .post('/api/users/register')
+            .send({ name: 'Test User', email: 'test@example.com', password: 'password123' });
+
+        testUser = userResponse.body;
+        
+        // Log in the user and get the token
+        const loginResponse = await request(app)
+            .post('/api/users/login')
+            .send({ email: 'test@example.com', password: 'password123' });
+
+        authToken = loginResponse.body.token;
+
+        // Create a sample budget
+        const budgetResponse = await request(app)
+            .post('/api/budgets')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                name: 'Test Budget',
+                amount: 5000,
+                spent: 1000,
+                period: 'monthly',
+                category: 'Groceries',
+                startDate: '2025-03-01T00:00:00.000Z',
+                endDate: '2025-03-31T23:59:59.999Z',
+                notificationThreshold: 75,
+                isActive: true
+            });
+
+        testBudget = budgetResponse.body;
     });
 
-    const testCases = [
-        {
-            description: 'should create a new budget',
-            endpoint: '/api/budgets',
-            method: 'post',
-            payload: testBudget,
-            expectedStatus: 201,
-            afterTest: (res) => { budgetId = res.body.data._id; } // Store created budget ID to perform the tests below
-        },
-        {
-            description: 'should get all budgets',
-            endpoint: '/api/budgets',
-            method: 'get',
-            expectedStatus: 200,
-        },
-        {
-            description: 'should update an existing budget',
-            endpoint: () => `/api/budgets/${budgetId}`,
-            method: 'put',
-            payload: updatedBudget,
-            expectedStatus: 200,
-        },
-        {
-            description: 'should delete an existing budget',
-            endpoint: () => `/api/budgets/${budgetId}`,
-            method: 'delete',
-            expectedStatus: 200,
-        },
-        {
-            description: 'should return 404 for non-existing budget',
-            endpoint: '/api/budgets/invalidbudgetid',
-            method: 'put',
-            payload: updatedBudget,
-            expectedStatus: 404,
-        }
-    ];
+    afterAll(async () => {
+        // Cleanup test data
+        await Budget.deleteMany({});
+        await User.deleteMany({});
 
-    testCases.forEach(({ description, endpoint, method, payload, expectedStatus, afterTest }) => {
-        it(description, async () => {
-            const res = await request(app)[method](typeof endpoint === 'function' ? endpoint() : endpoint)
-                .set('Authorization', `Bearer ${token}`)
-                .send(payload);
+        // Close the database connection
+        await closeDB();
+    });
 
-            expect(res.statusCode).toBe(expectedStatus);
+    test('Create a Budget', async () => {
+        const res = await request(app)
+            .post('/api/budgets')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                name: 'New Budget',
+                amount: 10000,
+                spent: 2000,
+                period: 'yearly',
+                category: 'Utilities',
+                startDate: '2025-04-01T00:00:00.000Z',
+                endDate: '2026-04-01T23:59:59.999Z',
+                notificationThreshold: 80,
+                isActive: true
+            });
 
-            if (expectedStatus === 201 || expectedStatus === 200) {
-                expect(res.body).toHaveProperty('success', true);
-                expect(res.body).toHaveProperty('data');
-                if (afterTest) afterTest(res);
-            } else {
-                expect(res.body).toHaveProperty('success', false);
-                expect(res.body).toHaveProperty('error');
-            }
-        });
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toHaveProperty('_id');
+        expect(res.body.name).toBe('New Budget');
+        expect(res.body.amount).toBe(10000);
+        expect(res.body.spent).toBe(2000);
+        expect(res.body.category).toBe('Utilities');
+        expect(res.body.period).toBe('yearly');
+    });
+
+    test('Fetch All Budgets', async () => {
+        const res = await request(app)
+            .get('/api/budgets')
+            .set('Authorization', `Bearer ${authToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    test('Fetch Single Budget', async () => {
+        const res = await request(app)
+            .get(`/api/budgets/${testBudget._id}`)
+            .set('Authorization', `Bearer ${authToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty('_id', testBudget._id);
+        expect(res.body.name).toBe('Test Budget');
+    });
+
+    test('Update a Budget', async () => {
+        const res = await request(app)
+            .put(`/api/budgets/${testBudget._id}`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({ amount: 8000, spent: 2500 });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.amount).toBe(8000);
+        expect(res.body.spent).toBe(2500);
+    });
+
+    test('Delete a Budget', async () => {
+        const res = await request(app)
+            .delete(`/api/budgets/${testBudget._id}`)
+            .set('Authorization', `Bearer ${authToken}`);
+
+        expect(res.statusCode).toBe(200);
+    });
+
+    test('Get Budget Status', async () => {
+        const res = await request(app)
+            .get('/api/budgets/status')
+            .set('Authorization', `Bearer ${authToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty('totalBudget');
     });
 });
